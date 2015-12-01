@@ -75,6 +75,7 @@
     <Compile Include="Model\ExposureCoverageContext.cs" />
     <Compile Include="Model\CoberturaExposicion.cs" />
     <Compile Include="Model\CoberturaExposicionPorTamañoTienda.cs" />
+    <Compile Include="Model\Extensions\ObjectStateManagerExtensions.cs" />
     <Compile Include="Model\FlujoConfiguracionSecuenciaUsuario.cs" />
     <Compile Include="Model\Marca.cs" />
     <Compile Include="Model\NivelClasificacionMarcaParaCoberturaExposicion.cs" />

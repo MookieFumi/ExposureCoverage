@@ -20,5 +20,9 @@ namespace ExposureCoverage.CA.Model.Extensions
             var match = regex.Match(sql);
             return match.Groups["table"].Value;
         }
+        public static string DumpAsHtml(this DbContext context)
+        {
+            return ((IObjectContextAdapter)context).ObjectContext.ObjectStateManager.DumpAsHtml();
+        }
     }
 }
