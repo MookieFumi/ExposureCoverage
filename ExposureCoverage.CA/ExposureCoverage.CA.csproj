@@ -92,6 +92,7 @@
     <Compile Include="Services\ICompanyService.cs" />
     <Compile Include="Services\IExposureCoverageService.cs" />
     <Compile Include="Infrastructure\SqlBatchExecutor.cs" />
+    <Compile Include="Services\ServiceBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

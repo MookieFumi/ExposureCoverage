@@ -7,19 +7,16 @@ using ExposureCoverage.CA.Model;
 
 namespace ExposureCoverage.CA.Services
 {
-    public class CompanyService : ICompanyService
+    public class CompanyService : ServiceBase, ICompanyService
     {
-        private readonly ExposureCoverageContext _context;
-
-        public CompanyService(ExposureCoverageContext context)
+        public CompanyService(ExposureCoverageContext context) : base(context)
         {
-            _context = context;
             SetMappings();
         }
 
         public IEnumerable<CompanyChannelBrandDTO> GetCompanies()
         {
-            return _context.Empresas
+            return Context.Empresas
                 .Include(p => p.Marcas)
                 .Include(p => p.Canales)
                 .ProjectTo<CompanyChannelBrandDTO>()
