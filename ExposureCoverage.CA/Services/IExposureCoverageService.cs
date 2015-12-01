@@ -4,6 +4,6 @@ namespace ExposureCoverage.CA.Services
 {
     public interface IExposureCoverageService
     {
-        void GenerateExposureCoverages(int companyId, IEnumerable<ChannelDTO> channels, int brandId);
+        int GenerateExposureCoverages(int companyId, IEnumerable<ChannelDTO> channels, int brandId);
     }
 }

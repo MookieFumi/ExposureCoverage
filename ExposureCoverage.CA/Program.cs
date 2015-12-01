@@ -13,6 +13,7 @@ namespace ExposureCoverage.CA
     {
         static void Main(string[] args)
         {
+            var totalGeneratedNo = 0;
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -23,7 +24,7 @@ namespace ExposureCoverage.CA
             var companieService = new CompanyService(context);
             var companies = companieService.GetCompanies();
 
-            Console.WriteLine("{0}: {1}", "Connected to", context.Database.Connection.DataSource);
+            Console.WriteLine("{0}: {1}", "connected to", context.Database.Connection.DataSource);
             using (var tran = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(25)))
             {
                 foreach (var company in companies)
@@ -32,13 +33,16 @@ namespace ExposureCoverage.CA
                     foreach (var brand in company.Brands)
                     {
                         Console.WriteLine("\t \t brand {0}", brand.Name);
-                        exposureCoverageService.GenerateExposureCoverages(company.CompanyId, company.Channels, brand.BrandId);
+                        var generatedNo = exposureCoverageService.GenerateExposureCoverages(company.CompanyId, company.Channels, brand.BrandId);
+                        totalGeneratedNo += generatedNo;
+                        Console.WriteLine("\t \t \t records number {0}", generatedNo);
                     }
                 }
                 tran.Complete();
             }
 
             stopwatch.Stop();
+            Console.WriteLine("total records number {0}", totalGeneratedNo);
             Console.WriteLine("{0} seconds/ {1} minutes", stopwatch.ElapsedMilliseconds / 1000, stopwatch.ElapsedMilliseconds / 1000 / 60);
             Console.ReadLine();
         }

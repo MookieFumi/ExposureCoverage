@@ -18,7 +18,7 @@ namespace ExposureCoverage.CA.Services
             SetMappings();
         }
 
-        public void GenerateExposureCoverages(int companyId, IEnumerable<ChannelDTO> channels, int brandId)
+        public int GenerateExposureCoverages(int companyId, IEnumerable<ChannelDTO> channels, int brandId)
         {
             var exposureCoverages = Enumerable.Empty<CoberturaExposicion>().ToList();
             var shopSizes = _context.TamañosTienda.Where(p => p.EmpresaId == companyId).Select(p => p.TamañoTiendaId);
@@ -56,6 +56,8 @@ namespace ExposureCoverage.CA.Services
                         exposureCoverages));
                 _context.SaveChanges();
             }
+
+            return exposureCoverages.Count;
         }
 
         private IList<ClassificationLevelValueDTO> GetClassificationLevelValues(int companyId, int brandId, IList<int> levels)
