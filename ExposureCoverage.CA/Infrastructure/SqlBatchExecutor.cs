@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace ExposureCoverage.CA
+namespace ExposureCoverage.CA.Infrastructure
 {
     internal static class SqlBatchExecutor
     {

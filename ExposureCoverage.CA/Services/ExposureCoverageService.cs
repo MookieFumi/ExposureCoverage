@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using AutoMapper;
@@ -16,42 +15,32 @@ namespace ExposureCoverage.CA.Services
         public ExposureCoverageService(ExposureCoverageContext context)
         {
             _context = context;
-            CreateMappings();
+            SetMappings();
         }
 
-        public void GenerateExposureCoverages(int companyId)
+        public void GenerateExposureCoverages(int companyId, IEnumerable<ChannelDTO> channels, int brandId)
         {
             var exposureCoverages = Enumerable.Empty<CoberturaExposicion>().ToList();
-
-            var brands = _context.Marcas.Where(p => p.EmpresaId == companyId).ToList();
             var shopSizes = _context.TamañosTienda.Where(p => p.EmpresaId == companyId).Select(p => p.TamañoTiendaId);
-            foreach (var brand in brands)
-            {
-                Console.WriteLine("{0} - {1}", brand.MarcaId, brand.Nombre);
-                var levels = GetClassificacionLevelsSelected(brand.MarcaId).ToList();
-                if (levels.Count > 0)
-                {
-                    var values = _context.Database
-                        .SqlQuery<ClassificationLevelValueDTO>(
-                            GetClassificationLevelValueSql(_context.GetTableName<Producto>(), levels),
-                            new SqlParameter("@companyId", companyId), new SqlParameter("@brandId", brand.MarcaId))
-                        .ToList();
-                    var channels = _context.Canales.Where(p => p.EmpresaId == companyId).Select(p => p.CanalId).ToList();
 
-                    foreach (var channelId in channels)
+            var selectedLevels = GetSelectedClassificacionLevels(brandId);
+            if (selectedLevels.Any())
+            {
+                var values = GetClassificationLevelValues(companyId, brandId, selectedLevels);
+                foreach (var channel in channels)
+                {
+                    var isFlowActive = _context.SecuenciaUsuarios.Any(p => p.CanalId == channel.ChannelId && p.FlujoDefinicionId == FlujoDefinicionIdCoberturaExposicion);
+                    if (!isFlowActive)
                     {
-                        var activatedFlow = _context.SecuenciaUsuarios.Any(p => p.CanalId == channelId && p.FlujoDefinicionId == FlujoDefinicionIdCoberturaExposicion);
-                        if (!activatedFlow)
+                        foreach (var value in values)
                         {
-                            foreach (var value in values)
+                            var sqlParameters =
+                                GetExposureCoverageParameters(companyId, brandId, channel.ChannelId, selectedLevels, value).ToArray();
+                            var query = _context.CoberturasExposicion.SqlQuery(GetExposureCoverageSql(selectedLevels), sqlParameters).ToList();
+                            if (!query.Any())
                             {
-                                var sqlParameters = GetExposureCoverageParameters(companyId, brand.MarcaId, channelId, levels, value).ToArray();
-                                var query = _context.CoberturasExposicion.SqlQuery(GetExposureCoverageSql(levels), sqlParameters).ToList();
-                                if (!query.Any())
-                                {
-                                    var exposureCoverage = CreateExposureCoverage(companyId, channelId, brand.MarcaId, value, shopSizes);
-                                    exposureCoverages.Add(exposureCoverage);
-                                }
+                                var exposureCoverage = CreateExposureCoverage(companyId, channel.ChannelId, brandId, value, shopSizes);
+                                exposureCoverages.Add(exposureCoverage);
                             }
                         }
                     }
@@ -62,12 +51,23 @@ namespace ExposureCoverage.CA.Services
             {
                 _context.CoberturasExposicion.AddRange(exposureCoverages);
                 _context.SaveChanges();
-                _context.CoberturasExposicionMirror.AddRange(Mapper.Map<IEnumerable<CoberturaExposicion>, IEnumerable<CoberturaExposicionMirror>>(exposureCoverages));
+                _context.CoberturasExposicionMirror.AddRange(
+                    Mapper.Map<IEnumerable<CoberturaExposicion>, IEnumerable<CoberturaExposicionMirror>>(
+                        exposureCoverages));
                 _context.SaveChanges();
             }
         }
 
-        private static void CreateMappings()
+        private IList<ClassificationLevelValueDTO> GetClassificationLevelValues(int companyId, int brandId, IList<int> levels)
+        {
+            return _context.Database
+                .SqlQuery<ClassificationLevelValueDTO>(
+                    GetClassificationLevelValueSql(_context.GetTableName<Producto>(), levels),
+                    new SqlParameter("@companyId", companyId), new SqlParameter("@brandId", brandId))
+                .ToList();
+        }
+
+        private static void SetMappings()
         {
             Mapper.CreateMap<ClassificationLevelValueDTO, CoberturaExposicion>();
 
@@ -102,7 +102,7 @@ namespace ExposureCoverage.CA.Services
             return exposureCoverage;
         }
 
-        private IEnumerable<SqlParameter> GetExposureCoverageParameters(int companyId, int brandId, int channelId, List<int> selectedLevels, ClassificationLevelValueDTO value)
+        private IEnumerable<SqlParameter> GetExposureCoverageParameters(int companyId, int brandId, int channelId, IList<int> selectedLevels, ClassificationLevelValueDTO value)
         {
             IList<SqlParameter> objects = new List<SqlParameter>();
             objects.Add(new SqlParameter("@companyId", companyId));
@@ -136,14 +136,14 @@ namespace ExposureCoverage.CA.Services
             return sql;
         }
 
-        private string GetClassificationLevelValueSql(string tableName, IList<int> levelsSelected)
+        private string GetClassificationLevelValueSql(string tableName, IList<int> selectedLevels)
         {
             var sql = "SELECT DISTINCT ";
-            for (var i = 0; i < levelsSelected.Count(); i++)
+            for (var i = 0; i < selectedLevels.Count(); i++)
             {
                 var field = string.Format("COALESCE({0}{1}, '') AS NivelClasificacion{1}", "NivelClasificacion",
-                    levelsSelected[i]);
-                if (i == levelsSelected.Count() - 1)
+                    selectedLevels[i]);
+                if (i == selectedLevels.Count() - 1)
                 {
                     sql += field;
                 }
@@ -157,12 +157,14 @@ namespace ExposureCoverage.CA.Services
             return sql;
         }
 
-        private IEnumerable<int> GetClassificacionLevelsSelected(int brandId)
+        private IList<int> GetSelectedClassificacionLevels(int brandId)
         {
-            var classificacionLevelsSelected = Enumerable.Empty<int>().ToList();
+            List<int> classificacionLevelsSelected = Enumerable.Empty<int>().ToList();
 
             var classificationLevel =
                 _context.NivelesClasificacionMarcaParaCoberturaExposicion.Single(p => p.MarcaId == brandId);
+
+            //Refactor
             if (classificationLevel.Nivel1Seleccionado)
             {
                 classificacionLevelsSelected.Add(1);

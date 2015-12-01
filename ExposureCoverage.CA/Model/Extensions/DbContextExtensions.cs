@@ -9,18 +9,16 @@ namespace ExposureCoverage.CA.Model.Extensions
     {
         public static string GetTableName<T>(this DbContext context) where T : class
         {
-            var objectContext = ((IObjectContextAdapter)context).ObjectContext;
+            var objectContext = ((IObjectContextAdapter) context).ObjectContext;
             return objectContext.GetTableName<T>();
         }
 
         public static string GetTableName<T>(this ObjectContext context) where T : class
         {
-            string sql = context.CreateObjectSet<T>().ToTraceString();
-            Regex regex = new Regex("FROM (?<table>.*) AS");
-            Match match = regex.Match(sql);
-
-            string table = match.Groups["table"].Value;
-            return table;
+            var sql = context.CreateObjectSet<T>().ToTraceString();
+            var regex = new Regex("FROM (?<table>.*) AS");
+            var match = regex.Match(sql);
+            return match.Groups["table"].Value;
         }
     }
 }

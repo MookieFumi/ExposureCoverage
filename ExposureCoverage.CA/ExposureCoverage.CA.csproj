@@ -81,12 +81,17 @@
     <Compile Include="Model\EntityConfigurations\NivelClasificacionMarcaParaCoberturaExposicionConfiguration.cs" />
     <Compile Include="Model\Producto.cs" />
     <Compile Include="Model\TamañoTienda.cs" />
+    <Compile Include="Services\CompanyService.cs" />
+    <Compile Include="Services\DTO\BrandDTO.cs" />
+    <Compile Include="Services\DTO\ChannelDTO.cs" />
+    <Compile Include="Services\DTO\CompanyChannelBrandDTO.cs" />
     <Compile Include="Services\ExposureCoverageService.cs" />
     <Compile Include="Services\DTO\ClassificationLevelValueDTO.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\ICompanyService.cs" />
     <Compile Include="Services\IExposureCoverageService.cs" />
-    <Compile Include="SqlBatchExecutor.cs" />
+    <Compile Include="Infrastructure\SqlBatchExecutor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
